@@ -77,3 +77,8 @@ def get_expenses():
 @app.get("/tokens")
 def get_tokens():
     return {"tokens": load_tokens()}
+
+@app.get("/")
+def home():
+    return {"message": "Expense Splitter Backend is running 🚀"}
+
