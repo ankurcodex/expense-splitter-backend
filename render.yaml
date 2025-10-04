@@ -15,5 +15,3 @@ services:
 databases:
   - name: expense-splitter-db
     plan: free
-
-
