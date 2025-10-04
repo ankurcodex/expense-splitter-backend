@@ -10,22 +10,25 @@ EXPENSES_FILE = Path(__file__).parent / "expenses.json"
 EXPO_URL = "https://exp.host/--/api/v2/push/send"
 
 # ---------- DATABASE SETUP ----------
-from sqlalchemy import create_engine, Column, Integer, String, Float, JSON
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local.db")
 
-# 🧠 Make SQLAlchemy use psycopg3 instead of psycopg2
+# ✅ Force SQLAlchemy to use psycopg3 explicitly
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine = create_engine(DATABASE_URL)
+print(f"✅ Using database: {DATABASE_URL}")
 
-
+engine = create_engine(DATABASE_URL, echo=True, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 
 # ---- Helper functions ----
