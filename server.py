@@ -89,8 +89,7 @@ def register_token(token: str = Body(..., embed=True)):
 
 
 from fastapi import Body
-print("📥 Received add-expense request")
-print("🔍 Incoming body:", description, amount, added_by, participants)
+
 
 @app.post("/add-expense")
 def add_expense(
@@ -99,6 +98,8 @@ def add_expense(
     added_by: str = Body(..., embed=True),
     participants: list[str] = Body(..., embed=True),
 ):
+print("📥 Received add-expense request")
+print("🔍 Incoming body:", description, amount, added_by, participants)
     db = SessionLocal()
     try:
         # ✅ Create new expense entry
