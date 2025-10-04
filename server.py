@@ -47,28 +47,63 @@ def register_token(token: str = Body(..., embed=True)):
     return {"status": "exists", "message": "Token already exists"}
 
 
+from fastapi import Body
+
 @app.post("/add-expense")
 def add_expense(
-    description: str = Body(...),
-    amount: float = Body(...),
-    added_by: str = Body(...),
-    participants: list[str] = Body(...)
+    description: str = Body(..., embed=True),
+    amount: float = Body(..., embed=True),
+    added_by: str = Body(..., embed=True),
+    participants: list[str] = Body(..., embed=True),
 ):
     db = SessionLocal()
-    expense = Expense(description=description, amount=amount, added_by=added_by)
-    db.add(expense)
-    db.commit()
+    try:
+        # ✅ Create new expense entry
+        expense = Expense(
+            description=description,
+            amount=amount,
+            added_by=added_by,
+            participants=participants,
+        )
+        db.add(expense)
+        db.commit()
+        db.refresh(expense)
 
-    # Notify only participants
-    tokens = [t.token for t in db.query(Token).all()]
-    if tokens:
-        split_amount = round(amount / len(participants), 2)
-        message = f"{added_by} added ${amount} for {description}. Each owes ${split_amount}"
+        # ✅ Calculate split
+        if participants:
+            share = round(amount / len(participants), 2)
+        else:
+            share = amount
+
+        message = f"{added_by} added ${amount} for {description}. Each owes ${share}."
+
+        # ✅ Get all tokens for push notifications
+        tokens = [t.token for t in db.query(Token).all()]
+
+        # ✅ Send notifications
         push_response = send_push(tokens, message)
-    else:
-        push_response = {"status": "no tokens"}
 
-    return {"status": "ok", "expense": expense.__dict__, "push_response": push_response}
+        print(f"✅ Added expense: {description}, notified {len(tokens)} users")
+
+        return {
+            "status": "success",
+            "expense": {
+                "id": expense.id,
+                "description": expense.description,
+                "amount": expense.amount,
+                "added_by": expense.added_by,
+                "participants": expense.participants,
+            },
+            "push_response": push_response,
+        }
+
+    except Exception as e:
+        print("🔥 ADD EXPENSE ERROR:", e)
+        db.rollback()
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        db.close()
 
 @app.get("/expenses")
 def get_expenses():
