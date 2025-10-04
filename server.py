@@ -46,23 +46,29 @@ def register_token(token: str = Body(..., embed=True)):
         return {"status": "ok", "message": "Token registered"}
     return {"status": "exists", "message": "Token already exists"}
 
+
 @app.post("/add-expense")
-def add_expense(description: str = Body(...), amount: float = Body(...), added_by: str = Body(...)):
-    # Save expense
-    expenses = load_expenses()
-    new_expense = {"description": description, "amount": amount, "added_by": added_by}
-    expenses.append(new_expense)
-    save_expenses(expenses)
+def add_expense(
+    description: str = Body(...),
+    amount: float = Body(...),
+    added_by: str = Body(...),
+    participants: list[str] = Body(...)
+):
+    db = SessionLocal()
+    expense = Expense(description=description, amount=amount, added_by=added_by)
+    db.add(expense)
+    db.commit()
 
-    # Push to all users
-    tokens = load_tokens()
-    if not tokens:
-        return {"status": "error", "message": "No tokens registered"}
+    # Notify only participants
+    tokens = [t.token for t in db.query(Token).all()]
+    if tokens:
+        split_amount = round(amount / len(participants), 2)
+        message = f"{added_by} added ${amount} for {description}. Each owes ${split_amount}"
+        push_response = send_push(tokens, message)
+    else:
+        push_response = {"status": "no tokens"}
 
-    message = f"{added_by} added ${amount} for {description}"
-    push_response = send_push(tokens, message)
-
-    return {"status": "ok", "expense": new_expense, "push_response": push_response}
+    return {"status": "ok", "expense": expense.__dict__, "push_response": push_response}
 
 @app.get("/expenses")
 def get_expenses():
