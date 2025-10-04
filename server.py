@@ -29,6 +29,25 @@ engine = create_engine(DATABASE_URL, echo=True, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+# ---------- DATABASE MODELS ----------
+from sqlalchemy import Column, Integer, String, Float, JSON
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    added_by = Column(String, nullable=False)
+    participants = Column(JSON, nullable=False)
+
+class Token(Base):
+    __tablename__ = "tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, nullable=False)
+
+Base.metadata.create_all(bind=engine)
 
 
 # ---- Helper functions ----
