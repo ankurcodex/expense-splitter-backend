@@ -9,6 +9,18 @@ TOKENS_FILE = Path(__file__).parent / "tokens.json"
 EXPENSES_FILE = Path(__file__).parent / "expenses.json"
 EXPO_URL = "https://exp.host/--/api/v2/push/send"
 
+# ---------- DATABASE SETUP ----------
+from sqlalchemy import create_engine, Column, Integer, String, Float, JSON
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local.db")  # fallback for local
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
 # ---- Helper functions ----
 def load_tokens():
     if TOKENS_FILE.exists():
