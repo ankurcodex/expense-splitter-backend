@@ -98,8 +98,8 @@ def add_expense(
     added_by: str = Body(..., embed=True),
     participants: list[str] = Body(..., embed=True),
 ):
-    print("📥 Received add-expense request")
-    print("🔍 Incoming body:", description, amount, added_by, participants)
+        print("📥 Received add-expense request")
+        print("🔍 Incoming body:", description, amount, added_by, participants)
     db = SessionLocal()
     try:
         # ✅ Create new expense entry

@@ -1,14 +1,16 @@
-import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, FlatList, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 
-// ✅ Configure notifications (new API, no warnings)
+const API_URL = "https://expense-splitter-backend-okji.onrender.com";
+
+
+
+// ✅ Configure notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
+    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -16,41 +18,33 @@ Notifications.setNotificationHandler({
 
 export default function Index() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  const [expenses, setExpenses] = useState([]);
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [addedBy, setAddedBy] = useState("");
   const notificationListener = useRef<any>();
   const responseListener = useRef<any>();
 
+  // Register for push notifications
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
+    registerForPushNotificationsAsync().then(token => {
       if (token) {
         setExpoPushToken(token);
-        console.log("✅ Expo Push Token:", token);
-        // After tokenResponse.data is received
-        const token = tokenResponse.data;
-        console.log("✅ Expo Push Token:", token);
-
-        // Send token to backend
-`       await fetch("http://127.0.0.1:8000/register-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-        });`
-
-      } else {
-        console.warn("⚠️ No push token received.");
+        fetch(`${API_URL}/register-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
       }
     });
 
-    // Listener: notification received while app is foregrounded
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        console.log("📩 Notification received:", notification);
-      });
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log("📩 Notification received:", notification);
+    });
 
-    // Listener: when user taps on a notification
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("👆 Notification tapped:", response);
-      });
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log("🧭 Notification response:", response);
+    });
 
     return () => {
       Notifications.removeNotificationSubscription(notificationListener.current);
@@ -58,74 +52,93 @@ export default function Index() {
     };
   }, []);
 
-  // Local test notification
-  const sendTestNotification = async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "💸 Expense Alert!",
-        body: "Alice added $40 for Dinner 🍕. You owe $10.",
-      },
-      trigger: { seconds: 2 },
-    });
+  const fetchExpenses = async () => {
+    const res = await fetch(`${API_URL}/expenses`);
+    const data = await res.json();
+    setExpenses(data.expenses || []);
   };
+  console.log("📡 Sending expense to:", `${API_URL}/add-expense`);
+
+  const addExpense = async () => {
+    await fetch(`${API_URL}/add-expense`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        description,
+        amount: parseFloat(amount),
+        added_by: addedBy,
+        participants: ["Alice", "Bob"],
+      }),
+    });
+    setDescription("");
+    setAmount("");
+    setAddedBy("");
+    fetchExpenses();
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🚀 Expense Splitter Push Test</Text>
-      <Text>Your Expo Push Token:</Text>
-      <Text selectable style={styles.tokenText}>
-        {expoPushToken ?? "Fetching..."}
-      </Text>
-      <Button title="Send Test Notification" onPress={sendTestNotification} />
+      <Text style={styles.title}>💸 Expense Splitter</Text>
+      <Text style={styles.tokenText}>Token: {expoPushToken ? expoPushToken : "Fetching..."}</Text>
+
+      <TextInput style={styles.input} placeholder="Description" value={description} onChangeText={setDescription} />
+      <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={amount} onChangeText={setAmount} />
+      <TextInput style={styles.input} placeholder="Added by" value={addedBy} onChangeText={setAddedBy} />
+
+      <Button title="Add Expense" onPress={addExpense} />
+
+      <Text style={styles.subtitle}>📜 Expenses:</Text>
+      <FlatList
+        data={expenses}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <Text style={styles.listItem}>
+            {item.added_by} spent ${item.amount} for {item.description}
+          </Text>
+        )}
+      />
     </View>
   );
 }
 
-// ✅ Helper: register device & get push token
 async function registerForPushNotificationsAsync() {
-  if (!Device.isDevice) {
-    console.warn("⚠️ Must use a physical device for push notifications");
-    return null;
-  }
+  let token;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== "granted") {
-    console.warn("⚠️ Notification permissions not granted!");
-    return null;
-  }
-
-  try {
-    // ✅ Requires projectId from app.json
-    const projectId = Constants?.expoConfig?.extra?.eas?.projectId;
-    if (!projectId) {
-      console.error("❌ No projectId found. Please add it to app.json under extra.eas.projectId");
-      return null;
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
     }
-
-    const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
-    console.log("📡 Full Expo token response:", tokenResponse);
-    return tokenResponse.data;
-  } catch (err) {
-    console.error("❌ Failed to get push token:", err);
-    return null;
+    if (finalStatus !== "granted") {
+      alert("Failed to get push token!");
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+  } else {
+    alert("Must use physical device for Push Notifications");
   }
 
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  return token;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
-  tokenText: { 
-  fontSize: 12, 
-  marginVertical: 10, 
-  textAlign: "center",
-  color: "#00FF00"   // 👈 bright green so you can see it clearly
-},
+  container: { flex: 1, padding: 20, marginTop: 50 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  subtitle: { fontSize: 20, marginTop: 20, marginBottom: 10 },
+  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, marginVertical: 5 },
+  listItem: { fontSize: 16, marginVertical: 4 },
+  tokenText: { fontSize: 12, marginBottom: 10 },
 });

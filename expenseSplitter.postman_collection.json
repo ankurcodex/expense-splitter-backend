@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "Expense Splitter API",
+    "_postman_id": "exp-splitter-001",
+    "description": "Test collection for Expense Splitter backend on Render.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🏠 Home",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"]
+        }
+      }
+    },
+    {
+      "name": "🔐 Register Token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"token\": \"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]\"\n}"
+        },
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/register-token",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"],
+          "path": ["register-token"]
+        }
+      }
+    },
+    {
+      "name": "💾 Add Expense",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"description\": \"Dinner 🍕\",\n    \"amount\": 40,\n    \"added_by\": \"Alice\",\n    \"participants\": [\"Bob\", \"Charlie\"]\n}"
+        },
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/add-expense",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"],
+          "path": ["add-expense"]
+        }
+      }
+    },
+    {
+      "name": "📜 Get Expenses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/expenses",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"],
+          "path": ["expenses"]
+        }
+      }
+    },
+    {
+      "name": "📊 Balances",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/balances",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"],
+          "path": ["balances"]
+        }
+      }
+    },
+    {
+      "name": "🎯 List Tokens",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://expense-splitter-backend-okji.onrender.com/tokens",
+          "protocol": "https",
+          "host": ["expense-splitter-backend-okji", "onrender", "com"],
+          "path": ["tokens"]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: expense-splitter-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    plan: free
+    branch: main
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: expense-splitter-db
+          property: connectionString
+
+databases:
+  - name: expense-splitter-db
+    plan: free
+services:
+  - type: web
+    name: expense-splitter-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    plan: free
+    branch: main
+    envVars:
+      - key: DATABASE_URL
+        fro
