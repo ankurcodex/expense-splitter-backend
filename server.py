@@ -89,6 +89,8 @@ def register_token(token: str = Body(..., embed=True)):
 
 
 from fastapi import Body
+print("📥 Received add-expense request")
+print("🔍 Incoming body:", description, amount, added_by, participants)
 
 @app.post("/add-expense")
 def add_expense(
@@ -109,7 +111,7 @@ def add_expense(
         db.add(expense)
         db.commit()
         db.refresh(expense)
-
+        
         # ✅ Calculate split
         if participants:
             share = round(amount / len(participants), 2)
